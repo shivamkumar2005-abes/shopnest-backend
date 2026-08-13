@@ -20,7 +20,12 @@ const createOrder = async (req, res) => {
         await order.save();
         const message = `dear ${req.user.name}, your order has been created successfully. Your order ID is ${order._id}\nTotal Amount: ${order.totalAmount}\nShipping Address: ${order.address.street}, ${order.address.city}, ${order.address.postalCode}, ${order.address.country}\nPayment ID: ${order.paymentId}\nStatus: ${order.status}`;
 
-        await sendemail(req.user.email, "Order Created", message);
+        try {
+          await sendemail(req.user.email, "Order Created", message);
+        } catch (emailError) {
+          console.error("Order confirmation email failed (order still saved):", emailError.message);
+        }
+
         res.status(201).json({ message: "Order created successfully", order });
     }
   } catch (error) {
@@ -51,8 +56,7 @@ const getOrders = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await Order.findByIdAndUpdate(
-      req.params.id);
+    const order = await Order.findById(req.params.id);
     if (order){
         order.status = status;
         await order.save();
